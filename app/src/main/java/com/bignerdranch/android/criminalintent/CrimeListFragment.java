@@ -44,6 +44,7 @@ public class CrimeListFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        updateUI();
     }
 
     private void updateUI(){
@@ -59,21 +60,6 @@ public class CrimeListFragment extends Fragment {
 
     }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(resultCode != Activity.RESULT_OK){
-            return;
-        }
-        if(requestCode == REQUEST_CRIME){
-            if(data == null){
-                return;
-            }
-
-            if(CrimeFragment.wasCrimeChanged(data)){
-                updateUI();
-            }
-        }
-    }
 
     private class CrimeHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
         public TextView mTitleTextView;
@@ -101,8 +87,8 @@ public class CrimeListFragment extends Fragment {
         @Override
         public void onClick(View v) {
             mLastClickedPosition = mPosition;
-            Intent intent = CrimeActivity.newIntent(getActivity(), mCrime.getId());
-            startActivityForResult(intent, REQUEST_CRIME);
+            Intent intent = CrimePagerActivity.newIntent(getActivity(), mCrime.getId());
+            startActivity(intent);
         }
     }
 
