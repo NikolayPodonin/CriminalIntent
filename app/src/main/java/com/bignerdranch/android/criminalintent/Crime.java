@@ -51,4 +51,8 @@ public class Crime {
     public void setSolved(boolean solved) {
         mSolved = solved;
     }
+
+    public CharSequence getFormatingTime() {
+        return DateFormat.format("h:mm a", mDate);
+    }
 }
