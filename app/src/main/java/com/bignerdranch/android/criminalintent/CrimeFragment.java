@@ -101,6 +101,12 @@ public class CrimeFragment extends Fragment {
         mDateButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //Создание фрагмента в активности
+//                Date date = mCrime.getDate();
+//                Intent intent = DatePickerActivity.newIntent(getActivity(), date);
+//                startActivityForResult(intent, REQUEST_DATE);
+
+                //Создание фрагмента в диалоге
                 android.support.v4.app.FragmentManager manager = getFragmentManager();
                 DatePickerFragment dialog = DatePickerFragment.newInstance(mCrime.getDate());
                 dialog.setTargetFragment(CrimeFragment.this, REQUEST_DATE);
