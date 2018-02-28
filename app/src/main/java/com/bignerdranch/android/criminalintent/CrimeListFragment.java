@@ -34,23 +34,18 @@ public class CrimeListFragment extends Fragment {
     private CrimeAdapter mAdapter;
     private Button mFirstCrimeButton;
     private boolean mSubtitleVisible;
-    private int mLastClickedPosition = 0;
-    private int mCrimesCount;
 
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
-        mCrimesCount = CrimeLab.get(getActivity()).getCrimes().size();
     }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_crime_list, container, false);
-
-
 
         mCrimeRecyclerView = (RecyclerView)view.findViewById(R.id.crime_recycler_view);
         mCrimeRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
@@ -74,6 +69,12 @@ public class CrimeListFragment extends Fragment {
         updateUI();
 
         return view;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        updateUI();
     }
 
     @Override
@@ -141,12 +142,8 @@ public class CrimeListFragment extends Fragment {
             mAdapter = new CrimeAdapter(crimes);
             mCrimeRecyclerView.setAdapter(mAdapter);
         } else {
-            if(mCrimesCount > crimes.size()){
-                mAdapter.notifyItemRemoved(mLastClickedPosition);
-                mCrimesCount = crimes.size();
-            } else{
-                mAdapter.notifyItemChanged(mLastClickedPosition);
-            }
+            mAdapter.setCrimes(crimes);
+            mAdapter.notifyDataSetChanged();
         }
 
         if(crimes.size() == 0){
@@ -182,8 +179,6 @@ public class CrimeListFragment extends Fragment {
 
         @Override
         public void onClick(View v) {
-            mLastClickedPosition = mPosition;
-            mCrimesCount = CrimeLab.get(getActivity()).getCrimes().size();
             Intent intent = CrimePagerActivity.newIntent(getActivity(), mCrime.getId());
             startActivity(intent);
         }
@@ -213,6 +208,10 @@ public class CrimeListFragment extends Fragment {
         @Override
         public int getItemCount() {
             return mCrimes.size();
+        }
+
+        public void setCrimes(List<Crime> crimes) {
+            mCrimes = crimes;
         }
     }
 }
