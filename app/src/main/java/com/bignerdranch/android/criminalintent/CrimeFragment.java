@@ -349,10 +349,11 @@ public class CrimeFragment extends Fragment {
     private void updatePhotoView(){
         if(mPhotoFile == null || !mPhotoFile.exists()){
             mPhotoView.setImageDrawable(null);
+            mPhotoView.setContentDescription(getString(R.string.crime_photo_no_image_description));
         } else {
-            //Bitmap bitmap = PicturesUtils.getScaledBitmap(mPhotoFile.getPath(), getActivity());
             Bitmap bitmap = PicturesUtils.getScaledBitmap(mPhotoFile.getPath(), mPhotoView);
             mPhotoView.setImageBitmap(bitmap);
+            mPhotoView.setContentDescription(getString(R.string.crime_photo_image_description));
         }
     }
 
