@@ -2,6 +2,7 @@ package com.bignerdranch.android.criminalintent;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -46,7 +47,6 @@ import java.util.UUID;
 
 public class CrimeFragment extends Fragment {
     private static final String ARG_CRIME_ID = "crime_id";
-    private static final String CRIME_WAS_CHANGED = "was_changed";
     private static final String DATE_DIALOG = "DialogDate";
     private static final String TIME_DIALOG = "DialogTime";
     private static final String IMAGE_DIALOG = "DialogImage";
@@ -66,7 +66,18 @@ public class CrimeFragment extends Fragment {
     private Button mReportButton;
     private ImageButton mPhotoButton;
     private ImageView mPhotoView;
-    private boolean mCrimeWasChanged = false;
+    private Callbacks mCallbacks;
+
+    public interface Callbacks{
+        void onCrimeUpdated(Crime crime);
+        void onCrimeDeleted();
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        mCallbacks = (Callbacks)context;
+    }
 
     public static CrimeFragment newInstance(UUID crimeId) {
         Bundle args = new Bundle();
@@ -77,9 +88,6 @@ public class CrimeFragment extends Fragment {
         return fragment;
     }
 
-    public static boolean wasCrimeChanged(Intent result){
-        return result.getBooleanExtra(CRIME_WAS_CHANGED, false);
-    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -90,9 +98,6 @@ public class CrimeFragment extends Fragment {
         mCrime = CrimeLab.get(getActivity()).getCrime(crimeId);
         mPhotoFile = CrimeLab.get(getActivity()).getPhotoFile(mCrime);
 
-        if(savedInstanceState != null){
-            mCrimeWasChanged = savedInstanceState.getBoolean(CRIME_WAS_CHANGED);
-        }
     }
 
     @Nullable
@@ -111,7 +116,7 @@ public class CrimeFragment extends Fragment {
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                 mCrime.setTitle(charSequence.toString());
-                setWasChangedResult(true);
+                updateCrime();
             }
 
             @Override
@@ -156,7 +161,7 @@ public class CrimeFragment extends Fragment {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                 mCrime.setSolved(isChecked);
-                setWasChangedResult(true);
+                updateCrime();
             }
         });
 
@@ -269,7 +274,7 @@ public class CrimeFragment extends Fragment {
             case R.id.menu_item_delete_crime:
                 CrimeLab crimeLab = CrimeLab.get(getActivity());
                 crimeLab.deleteCrime(mCrime);
-                getActivity().finish();
+                mCallbacks.onCrimeDeleted();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -285,6 +290,7 @@ public class CrimeFragment extends Fragment {
         if(requestCode == REQUEST_DATE){
             Date date = (Date) data.getSerializableExtra(DatePickerFragment.EXTRA_DATE);
             mCrime.setDate(date);
+            updateCrime();
             updateDate();
         }else if(requestCode == REQUEST_TIME){
             int hour = data.getIntExtra(TimePickerFragment.EXTRA_HOUR, 0);
@@ -296,6 +302,7 @@ public class CrimeFragment extends Fragment {
 
             mCrime.setDate(calendar.getTime());
 
+            updateCrime();
             updateTime();
         } else if(requestCode == REQUEST_CONTACT && data != null){
             Uri contactUri = data.getData();
@@ -314,11 +321,13 @@ public class CrimeFragment extends Fragment {
                 c.moveToFirst();
                 String suspect = c.getString(0);
                 mCrime.setSuspect(suspect);
+                updateCrime();
                 mChooseSuspectButton.setText(suspect);
             } finally {
                 c.close();
             }
         } else if(requestCode == REQUEST_PHOTO){
+            updateCrime();
             Uri uri = FileProvider.getUriForFile(getActivity(),
                     "com.bignerdranch.android.criminalintent.fileprovider",
                     mPhotoFile);
@@ -335,6 +344,21 @@ public class CrimeFragment extends Fragment {
 
     private void updateTime() {
         mTimeButton.setText(mCrime.getFormatingTime());
+    }
+
+    private void updatePhotoView(){
+        if(mPhotoFile == null || !mPhotoFile.exists()){
+            mPhotoView.setImageDrawable(null);
+        } else {
+            //Bitmap bitmap = PicturesUtils.getScaledBitmap(mPhotoFile.getPath(), getActivity());
+            Bitmap bitmap = PicturesUtils.getScaledBitmap(mPhotoFile.getPath(), mPhotoView);
+            mPhotoView.setImageBitmap(bitmap);
+        }
+    }
+
+    private void updateCrime(){
+        CrimeLab.get(getActivity()).updateCrime(mCrime);
+        mCallbacks.onCrimeUpdated(mCrime);
     }
 
     private String getCrimeReport(){
@@ -359,26 +383,10 @@ public class CrimeFragment extends Fragment {
         return report;
     }
 
-    private void updatePhotoView(){
-        if(mPhotoFile == null || !mPhotoFile.exists()){
-            mPhotoView.setImageDrawable(null);
-        } else {
-            //Bitmap bitmap = PicturesUtils.getScaledBitmap(mPhotoFile.getPath(), getActivity());
-            Bitmap bitmap = PicturesUtils.getScaledBitmap(mPhotoFile.getPath(), mPhotoView);
-            mPhotoView.setImageBitmap(bitmap);
-        }
-    }
-
     @Override
-    public void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putBoolean(CRIME_WAS_CHANGED, mCrimeWasChanged);
+    public void onDetach() {
+        super.onDetach();
+        mCallbacks = null;
     }
 
-    private void setWasChangedResult(boolean result){
-        Intent data = new Intent();
-        data.putExtra(CRIME_WAS_CHANGED, result);
-        getActivity().setResult(Activity.RESULT_OK, data);
-        mCrimeWasChanged = result;
-    }
 }
