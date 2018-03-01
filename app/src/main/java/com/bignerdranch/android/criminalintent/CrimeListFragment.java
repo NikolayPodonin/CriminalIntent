@@ -10,6 +10,7 @@ import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -36,6 +37,7 @@ public class CrimeListFragment extends Fragment {
     private Button mFirstCrimeButton;
     private boolean mSubtitleVisible;
     private Callbacks mCallbacks;
+    private ItemTouchHelper mItemTouchHelper;
 
     public interface Callbacks{
         void onCrimeSelected(Crime crime);
@@ -60,6 +62,20 @@ public class CrimeListFragment extends Fragment {
 
         mCrimeRecyclerView = (RecyclerView)view.findViewById(R.id.crime_recycler_view);
         mCrimeRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+
+        mItemTouchHelper = new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP | ItemTouchHelper.DOWN, ItemTouchHelper.LEFT) {
+            @Override
+            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
+                CrimeHolder holder = (CrimeHolder)viewHolder;
+                CrimeLab.get(getActivity()).deleteCrime(holder.getCrime());
+            }
+        });
+        mItemTouchHelper.attachToRecyclerView(mCrimeRecyclerView);
 
         if(savedInstanceState != null) {
             mSubtitleVisible = savedInstanceState.getBoolean(SAVED_SUBTITLE_VISIBLE, false);
@@ -175,7 +191,6 @@ public class CrimeListFragment extends Fragment {
         public TextView mDateTextView;
         public CheckBox mSolvedCheckBox;
         private Crime mCrime;
-        private int mPosition = 0;
 
         public CrimeHolder(View itemView){
             super(itemView);
@@ -190,12 +205,15 @@ public class CrimeListFragment extends Fragment {
             mTitleTextView.setText(mCrime.getTitle());
             mDateTextView.setText(mCrime.getFormatingDate());
             mSolvedCheckBox.setChecked(mCrime.isSolved());
-            mPosition = position;
         }
 
         @Override
         public void onClick(View v) {
             mCallbacks.onCrimeSelected(mCrime);
+        }
+
+        public Crime getCrime() {
+            return mCrime;
         }
     }
 
